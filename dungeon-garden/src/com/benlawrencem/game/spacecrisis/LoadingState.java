@@ -6,6 +6,8 @@ import org.newdawn.slick.SlickException;
 import org.newdawn.slick.state.BasicGameState;
 import org.newdawn.slick.state.StateBasedGame;
 
+import com.benlawrencem.game.spacecrisis.level.*;
+
 public class LoadingState extends BasicGameState {
 	private int stateId;
 
@@ -25,8 +27,8 @@ public class LoadingState extends BasicGameState {
 
 	@Override
 	public void update(GameContainer container, StateBasedGame game, int delta) throws SlickException {
-		//((GameplayState) game.getState(SpaceCrisisGame.GAMEPLAY_STATE)).init(container, game, new ExampleBasicLevel());
-		//game.enterState(SpaceCrisisGame.GAMEPLAY_STATE);
+		((GameplayState) game.getState(SpaceCrisisGame.GAMEPLAY_STATE)).init(container, game, new RandomWalkLevel());
+		game.enterState(SpaceCrisisGame.GAMEPLAY_STATE);
 	}
 
 	@Override
