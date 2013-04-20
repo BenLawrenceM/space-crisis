@@ -13,7 +13,7 @@ public abstract class Entity implements Renderable {
 	private Tile currTile;
 	private Tile nextTile;
 	private Direction moveDirection;
-	private Direction continuousMoveDirection;
+	private Direction[] moveDirectionPreferences;
 	private int timeSpentMoving;
 	private int timeNeededToCommitMove;
 	private int timeNeededToCompleteMove;
@@ -23,7 +23,9 @@ public abstract class Entity implements Renderable {
 		currTile = startingTile;
 		nextTile = null;
 		moveDirection = null;
-		continuousMoveDirection = null;
+		moveDirectionPreferences = new Direction[4];
+		for(int i = 0; i < moveDirectionPreferences.length; i++)
+			moveDirectionPreferences[i] = null;
 		timeSpentMoving = 0;
 		timeNeededToCommitMove = 100;
 		timeNeededToCompleteMove = 200;
@@ -66,9 +68,9 @@ public abstract class Entity implements Renderable {
 			//complete move and queue up next move
 			if(timeSpentMoving >= timeNeededToCompleteMove) {
 				moveDirection = null;
-				if(continuousMoveDirection != null) {
+				if(moveDirectionPreferences[0] != null) {
 					int newDelta = timeSpentMoving - timeNeededToCompleteMove;
-					move(continuousMoveDirection);
+					move(moveDirectionPreferences[0]);
 					updatePositionBasedOnMovement(newDelta);
 				}
 				else timeSpentMoving = 0;
@@ -108,30 +110,64 @@ public abstract class Entity implements Renderable {
 		}
 	}
 
-	public void keepMovingNorth() {
-		keepMoving(Direction.NORTH);
+	public void startMovingNorth() {
+		startMoving(Direction.NORTH);
 	}
 
-	public void keepMovingSouth() {
-		keepMoving(Direction.SOUTH);
+	public void startMovingSouth() {
+		startMoving(Direction.SOUTH);
 	}
 
-	public void keepMovingEast() {
-		keepMoving(Direction.EAST);
+	public void startMovingEast() {
+		startMoving(Direction.EAST);
 	}
 
-	public void keepMovingWest() {
-		keepMoving(Direction.WEST);
+	public void startMovingWest() {
+		startMoving(Direction.WEST);
 	}
 
-	private void keepMoving(Direction dir) {
+	private void startMoving(Direction dir) {
 		if(!isMoving())
 			move(dir);
-		continuousMoveDirection = dir;
+		int dirIndex = moveDirectionPreferences.length - 1;
+		for(int i = 0; i < moveDirectionPreferences.length && dirIndex == -1; i++)
+			if(moveDirectionPreferences[i] == dir)
+				dirIndex = i;
+		for(int i = dirIndex; i >= 1; i--)
+			moveDirectionPreferences[i] = moveDirectionPreferences[i - 1];
+		moveDirectionPreferences[0] = dir;
+	}
+
+	public void stopMovingNorth() {
+		stopMoving(Direction.NORTH);
+	}
+
+	public void stopMovingSouth() {
+		stopMoving(Direction.SOUTH);
+	}
+
+	public void stopMovingEast() {
+		stopMoving(Direction.EAST);
+	}
+
+	public void stopMovingWest() {
+		stopMoving(Direction.WEST);
 	}
 
 	public void stopMoving() {
-		continuousMoveDirection = null;
+		for(int i = 0; i < moveDirectionPreferences.length; i++)
+			moveDirectionPreferences[i] = null;
+	}
+
+	private void stopMoving(Direction dir) {
+		boolean foundDir = false;
+		for(int i = 0; i < moveDirectionPreferences.length - 1; i++) {
+			if(!foundDir && moveDirectionPreferences[i] == dir)
+				foundDir = true;
+			if(foundDir)
+				moveDirectionPreferences[i] = moveDirectionPreferences[i + 1];
+		}
+		moveDirectionPreferences[moveDirectionPreferences.length - 1] = null;
 	}
 
 	protected boolean isMoving() {

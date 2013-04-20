@@ -51,23 +51,36 @@ public class PlayerMovementLevel implements TileLevel {
 	public void keyPressed(int key, char c) {
 		switch(key) {
 			case Input.KEY_UP:
-				player.keepMovingNorth();
+				player.startMovingNorth();
 				break;
 			case Input.KEY_DOWN:
-				player.keepMovingSouth();
+				player.startMovingSouth();
 				break;
 			case Input.KEY_LEFT:
-				player.keepMovingWest();
+				player.startMovingWest();
 				break;
 			case Input.KEY_RIGHT:
-				player.keepMovingEast();
+				player.startMovingEast();
 				break;
 		}
 	}
 
 	@Override
 	public void keyReleased(int key, char c) {
-		player.stopMoving();
+		switch(key) {
+		case Input.KEY_UP:
+			player.stopMovingNorth();
+			break;
+		case Input.KEY_DOWN:
+			player.stopMovingSouth();
+			break;
+		case Input.KEY_LEFT:
+			player.stopMovingWest();
+			break;
+		case Input.KEY_RIGHT:
+			player.stopMovingEast();
+			break;
+	}
 	}
 
 	@Override
