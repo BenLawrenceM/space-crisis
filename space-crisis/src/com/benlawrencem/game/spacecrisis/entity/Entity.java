@@ -13,6 +13,7 @@ public abstract class Entity implements Renderable {
 	private Tile currTile;
 	private Tile nextTile;
 	private Direction moveDirection;
+	private Direction continuousMoveDirection;
 	private int timeSpentMoving;
 	private int timeNeededToCommitMove;
 	private int timeNeededToCompleteMove;
@@ -22,6 +23,7 @@ public abstract class Entity implements Renderable {
 		currTile = startingTile;
 		nextTile = null;
 		moveDirection = null;
+		continuousMoveDirection = null;
 		timeSpentMoving = 0;
 		timeNeededToCommitMove = 100;
 		timeNeededToCompleteMove = 200;
@@ -47,30 +49,37 @@ public abstract class Entity implements Renderable {
 
 	public void update(int delta) {
 		decideBehavior(delta);
+		updatePositionBasedOnMovement(delta);
+	}
+
+	private void updatePositionBasedOnMovement(int delta) {
 		if(isMoving()) {
-			if(timeSpentMoving < timeNeededToCommitMove && timeSpentMoving + delta >= timeNeededToCommitMove)
-				commitMove();
+			//commit move
+			if(timeSpentMoving < timeNeededToCommitMove && timeSpentMoving + delta >= timeNeededToCommitMove) {
+				currTile = nextTile;
+				nextTile = null;
+			}
+
+			//increment movement
 			timeSpentMoving += delta;
+
+			//complete move and queue up next move
 			if(timeSpentMoving >= timeNeededToCompleteMove) {
-				completeMove();
+				moveDirection = null;
+				if(continuousMoveDirection != null) {
+					int newDelta = timeSpentMoving - timeNeededToCompleteMove;
+					move(continuousMoveDirection);
+					updatePositionBasedOnMovement(newDelta);
+				}
+				else timeSpentMoving = 0;
 			}
 		}
 	}
 
 	protected abstract void decideBehavior(int delta);
 
-	private void commitMove() {
-		currTile = nextTile;
-		nextTile = null;
-	}
-
 	private boolean hasCommittedMove() {
 		return timeSpentMoving >= timeNeededToCommitMove;
-	}
-
-	private void completeMove() {
-		moveDirection = null;
-		timeSpentMoving = 0;
 	}
 
 	public abstract void render(Graphics g, Visibility visibility, float x, float y, float scale);
@@ -97,6 +106,32 @@ public abstract class Entity implements Renderable {
 			moveDirection = dir;
 			timeSpentMoving = 0;
 		}
+	}
+
+	public void keepMovingNorth() {
+		keepMoving(Direction.NORTH);
+	}
+
+	public void keepMovingSouth() {
+		keepMoving(Direction.SOUTH);
+	}
+
+	public void keepMovingEast() {
+		keepMoving(Direction.EAST);
+	}
+
+	public void keepMovingWest() {
+		keepMoving(Direction.WEST);
+	}
+
+	private void keepMoving(Direction dir) {
+		if(!isMoving())
+			move(dir);
+		continuousMoveDirection = dir;
+	}
+
+	public void stopMoving() {
+		continuousMoveDirection = null;
 	}
 
 	protected boolean isMoving() {

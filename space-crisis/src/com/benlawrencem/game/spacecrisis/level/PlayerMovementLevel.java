@@ -5,15 +5,17 @@ import java.util.List;
 
 import org.newdawn.slick.Color;
 import org.newdawn.slick.Graphics;
+import org.newdawn.slick.Input;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
 import com.benlawrencem.game.spacecrisis.entity.Entity;
 
-public class RandomWalkLevel implements TileLevel {
+public class PlayerMovementLevel implements TileLevel {
 	private Tile[][] tiles;
 	private List<Entity> entities;
 	private Perspective perspective;
+	private PlayerEntity player;
 
 	@Override
 	public void init() {
@@ -23,12 +25,10 @@ public class RandomWalkLevel implements TileLevel {
 				tiles[x][y] = new Tile(this, x, y);
 
 		entities = new ArrayList<Entity>();
-		for(int i = 0; i < 999; i++)
-			entities.add(new RandomWalkEntity(this, tiles[49][49]));
 
-		Entity entity = new RandomWalkEntity(this, tiles[49][49]);
-		entities.add(entity);
-		perspective = new EntityPerspective(this, entity);
+		player = new PlayerEntity(this, tiles[49][49]);
+		entities.add(player);
+		perspective = new EntityPerspective(this, player);
 	}
 
 	@Override
@@ -48,10 +48,27 @@ public class RandomWalkLevel implements TileLevel {
 	}
 
 	@Override
-	public void keyPressed(int key, char c) {}
+	public void keyPressed(int key, char c) {
+		switch(key) {
+			case Input.KEY_UP:
+				player.keepMovingNorth();
+				break;
+			case Input.KEY_DOWN:
+				player.keepMovingSouth();
+				break;
+			case Input.KEY_LEFT:
+				player.keepMovingWest();
+				break;
+			case Input.KEY_RIGHT:
+				player.keepMovingEast();
+				break;
+		}
+	}
 
 	@Override
-	public void keyReleased(int key, char c) {}
+	public void keyReleased(int key, char c) {
+		player.stopMoving();
+	}
 
 	@Override
 	public Tile getTile(Tile source, Direction dir) {
@@ -84,13 +101,13 @@ public class RandomWalkLevel implements TileLevel {
 		return 24;
 	}
 
-	private static class RandomWalkEntity extends Entity {
-		private int delayBeforeDecidingBehavior;
-
-		public RandomWalkEntity(TileLevel level, Tile startingTile) {
+	private static class PlayerEntity extends Entity {
+		public PlayerEntity(TileLevel level, Tile startingTile) {
 			super(level, startingTile);
-			delayBeforeDecidingBehavior = 0;
 		}
+
+		@Override
+		protected void decideBehavior(int delta) {}
 
 		@Override
 		public void render(Graphics g, Visibility visibility, float x, float y, float scale) {
@@ -105,26 +122,7 @@ public class RandomWalkLevel implements TileLevel {
 					g.setColor(Color.yellow);
 				else
 					g.setColor(Color.white);
-				g.fillRect(x - (16 * scale), y - (12 * scale), 32 * scale, 24 * scale);
-			}
-		}
-
-		@Override
-		protected void decideBehavior(int delta) {
-			if(!isMoving()) {
-				delayBeforeDecidingBehavior -= delta;
-				if(delayBeforeDecidingBehavior < 0) {
-					double r = Math.random();
-					if(r < 0.25)
-						moveNorth();
-					else if(r < 0.50)
-						moveSouth();
-					else if(r < 0.75)
-						moveEast();
-					else
-						moveWest();
-					delayBeforeDecidingBehavior = (int) (50 + 250 * Math.random());
-				}
+				g.fillRect(x - (4 * scale), y - (10 * scale), 8 * scale, 20 * scale);
 			}
 		}
 	}

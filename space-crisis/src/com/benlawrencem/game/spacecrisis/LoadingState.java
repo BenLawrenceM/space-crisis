@@ -27,7 +27,7 @@ public class LoadingState extends BasicGameState {
 
 	@Override
 	public void update(GameContainer container, StateBasedGame game, int delta) throws SlickException {
-		((GameplayState) game.getState(SpaceCrisisGame.GAMEPLAY_STATE)).init(container, game, new RandomWalkLevel());
+		((GameplayState) game.getState(SpaceCrisisGame.GAMEPLAY_STATE)).init(container, game, new PlayerMovementLevel());
 		game.enterState(SpaceCrisisGame.GAMEPLAY_STATE);
 	}
 
