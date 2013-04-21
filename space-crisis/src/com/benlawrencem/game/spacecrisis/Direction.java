@@ -1,5 +1,5 @@
 package com.benlawrencem.game.spacecrisis;
 
 public enum Direction {
-	NORTH, SOUTH, EAST, WEST
+	NONE, NORTH, SOUTH, EAST, WEST
 }

@@ -3,13 +3,13 @@ package com.benlawrencem.game.spacecrisis.level;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.newdawn.slick.Color;
 import org.newdawn.slick.Graphics;
 import org.newdawn.slick.Input;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
 import com.benlawrencem.game.spacecrisis.entity.Entity;
+import com.benlawrencem.game.spacecrisis.entity.PlayerEntity;
 
 public class PlayerMovementLevel implements TileLevel {
 	private Tile[][] tiles;
@@ -19,13 +19,14 @@ public class PlayerMovementLevel implements TileLevel {
 
 	@Override
 	public void init() {
+		PlayerEntity.loadResources();
+
 		tiles = new Tile[99][99];
 		for(int x = 0; x < tiles.length; x++)
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
 		entities = new ArrayList<Entity>();
-
 		player = new PlayerEntity(this, tiles[49][49]);
 		entities.add(player);
 		perspective = new EntityPerspective(this, player);
@@ -80,7 +81,7 @@ public class PlayerMovementLevel implements TileLevel {
 		case Input.KEY_RIGHT:
 			player.stopMovingEast();
 			break;
-	}
+		}
 	}
 
 	@Override
@@ -112,31 +113,5 @@ public class PlayerMovementLevel implements TileLevel {
 	@Override
 	public int getTileHeight() {
 		return 24;
-	}
-
-	private static class PlayerEntity extends Entity {
-		public PlayerEntity(TileLevel level, Tile startingTile) {
-			super(level, startingTile);
-		}
-
-		@Override
-		protected void decideBehavior(int delta) {}
-
-		@Override
-		public void render(Graphics g, Visibility visibility, float x, float y, float scale) {
-			if(visibility == Visibility.VISIBLE) {
-				if(isMovingNorth())
-					g.setColor(Color.red);
-				else if(isMovingSouth())
-					g.setColor(Color.green);
-				else if(isMovingEast())
-					g.setColor(Color.cyan);
-				else if(isMovingWest())
-					g.setColor(Color.yellow);
-				else
-					g.setColor(Color.white);
-				g.fillRect(x - (4 * scale), y - (10 * scale), 8 * scale, 20 * scale);
-			}
-		}
 	}
 }

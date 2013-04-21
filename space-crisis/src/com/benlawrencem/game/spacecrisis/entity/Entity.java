@@ -13,7 +13,8 @@ public abstract class Entity implements Renderable {
 	private Tile currTile;
 	private Tile nextTile;
 	private Direction moveDirection;
-	private Direction[] moveDirectionPreferences;
+	private Direction nextMoveDirection;
+	private Direction mostRecentMoveDirection;
 	private int timeSpentMoving;
 	private int timeNeededToCommitMove;
 	private int timeNeededToCompleteMove;
@@ -22,13 +23,12 @@ public abstract class Entity implements Renderable {
 		this.level = level;
 		currTile = startingTile;
 		nextTile = null;
-		moveDirection = null;
-		moveDirectionPreferences = new Direction[4];
-		for(int i = 0; i < moveDirectionPreferences.length; i++)
-			moveDirectionPreferences[i] = null;
+		moveDirection = Direction.NONE;
+		nextMoveDirection = Direction.NONE;
+		mostRecentMoveDirection = Direction.NONE;
 		timeSpentMoving = 0;
-		timeNeededToCommitMove = 100;
-		timeNeededToCompleteMove = 200;
+		timeNeededToCommitMove = 150;
+		timeNeededToCompleteMove = 300;
 	}
 
 	public float getX() {
@@ -50,11 +50,14 @@ public abstract class Entity implements Renderable {
 	}
 
 	public void update(int delta) {
+		int remainder = updatePositionBasedOnMovement(delta);
 		decideBehavior(delta);
-		updatePositionBasedOnMovement(delta);
+		updatePositionBasedOnMovement(remainder);
 	}
 
-	private void updatePositionBasedOnMovement(int delta) {
+	private int updatePositionBasedOnMovement(int delta) {
+		int remainder = delta;
+
 		if(isMoving()) {
 			//commit move
 			if(timeSpentMoving < timeNeededToCommitMove && timeSpentMoving + delta >= timeNeededToCommitMove) {
@@ -65,17 +68,22 @@ public abstract class Entity implements Renderable {
 			//increment movement
 			timeSpentMoving += delta;
 
-			//complete move and queue up next move
+			//complete move
 			if(timeSpentMoving >= timeNeededToCompleteMove) {
-				moveDirection = null;
-				if(moveDirectionPreferences[0] != null) {
-					int newDelta = timeSpentMoving - timeNeededToCompleteMove;
-					move(moveDirectionPreferences[0]);
-					updatePositionBasedOnMovement(newDelta);
+				remainder = timeSpentMoving - timeNeededToCompleteMove;
+				mostRecentMoveDirection = moveDirection;
+				moveDirection = Direction.NONE;
+				timeSpentMoving = 0;
+				if(nextMoveDirection != Direction.NONE) {
+					Direction dir = nextMoveDirection;
+					nextMoveDirection = Direction.NONE;
+					move(dir);
 				}
-				else timeSpentMoving = 0;
 			}
+			else remainder = 0;
 		}
+
+		return remainder;
 	}
 
 	protected abstract void decideBehavior(int delta);
@@ -102,76 +110,28 @@ public abstract class Entity implements Renderable {
 		move(Direction.WEST);
 	}
 
-	private void move(Direction dir) {
-		if(!isMoving()) {
+	protected void move(Direction dir) {
+		if(isMoving()) {
+			nextMoveDirection = dir;
+		}
+		else {
 			nextTile = level.getTile(currTile, dir);
+			mostRecentMoveDirection = (dir != Direction.NONE ? dir : moveDirection);
 			moveDirection = dir;
 			timeSpentMoving = 0;
 		}
 	}
 
-	public void startMovingNorth() {
-		startMoving(Direction.NORTH);
+	public Direction getMoveDirection() {
+		return moveDirection;
 	}
 
-	public void startMovingSouth() {
-		startMoving(Direction.SOUTH);
+	public Direction getMostRecentMoveDirection() {
+		return mostRecentMoveDirection;
 	}
 
-	public void startMovingEast() {
-		startMoving(Direction.EAST);
-	}
-
-	public void startMovingWest() {
-		startMoving(Direction.WEST);
-	}
-
-	private void startMoving(Direction dir) {
-		if(!isMoving())
-			move(dir);
-		int dirIndex = moveDirectionPreferences.length - 1;
-		for(int i = 0; i < moveDirectionPreferences.length && dirIndex == -1; i++)
-			if(moveDirectionPreferences[i] == dir)
-				dirIndex = i;
-		for(int i = dirIndex; i >= 1; i--)
-			moveDirectionPreferences[i] = moveDirectionPreferences[i - 1];
-		moveDirectionPreferences[0] = dir;
-	}
-
-	public void stopMovingNorth() {
-		stopMoving(Direction.NORTH);
-	}
-
-	public void stopMovingSouth() {
-		stopMoving(Direction.SOUTH);
-	}
-
-	public void stopMovingEast() {
-		stopMoving(Direction.EAST);
-	}
-
-	public void stopMovingWest() {
-		stopMoving(Direction.WEST);
-	}
-
-	public void stopMoving() {
-		for(int i = 0; i < moveDirectionPreferences.length; i++)
-			moveDirectionPreferences[i] = null;
-	}
-
-	private void stopMoving(Direction dir) {
-		boolean foundDir = false;
-		for(int i = 0; i < moveDirectionPreferences.length - 1; i++) {
-			if(!foundDir && moveDirectionPreferences[i] == dir)
-				foundDir = true;
-			if(foundDir)
-				moveDirectionPreferences[i] = moveDirectionPreferences[i + 1];
-		}
-		moveDirectionPreferences[moveDirectionPreferences.length - 1] = null;
-	}
-
-	protected boolean isMoving() {
-		return moveDirection != null;
+	public boolean isMoving() {
+		return moveDirection != Direction.NONE;
 	}
 
 	protected boolean isMovingNorth() {

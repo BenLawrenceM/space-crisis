@@ -11,20 +11,23 @@ import com.benlawrencem.game.spacecrisis.display.*;
 import com.benlawrencem.game.spacecrisis.entity.Entity;
 
 public class RandomWalkLevel implements TileLevel {
+	private int timer;
 	private Tile[][] tiles;
 	private List<Entity> entities;
 	private Perspective perspective;
 
 	@Override
 	public void init() {
+		timer = 0;
+
 		tiles = new Tile[99][99];
 		for(int x = 0; x < tiles.length; x++)
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
 		entities = new ArrayList<Entity>();
-		for(int i = 0; i < 999; i++)
-			entities.add(new RandomWalkEntity(this, tiles[49][49]));
+		//for(int i = 0; i < 7; i++)
+			//entities.add(new RandomWalkEntity(this, tiles[49][49]));
 
 		Entity entity = new RandomWalkEntity(this, tiles[49][49]);
 		entities.add(entity);
@@ -35,6 +38,19 @@ public class RandomWalkLevel implements TileLevel {
 	public void update(int delta) {
 		for(Entity entity : entities)
 			entity.update(delta);
+		if(timer < 3000 && timer + delta >= 3000)
+			for(int i = 0; i < 9; i++)
+				entities.add(new RandomWalkEntity(this, tiles[49][49]));
+		if(timer < 8000 && timer + delta >= 8000)
+			for(int i = 0; i < 90; i++)
+				entities.add(new RandomWalkEntity(this, tiles[45][45]));
+		if(timer < 12000 && timer + delta >= 12000)
+			for(int i = 0; i < 900; i++)
+				entities.add(new RandomWalkEntity(this, tiles[53][49]));
+		if(timer < 16000 && timer + delta >= 16000)
+			for(int i = 0; i < 9000; i++)
+				entities.add(new RandomWalkEntity(this, tiles[47][53]));
+		timer += delta;
 	}
 
 	@Override
