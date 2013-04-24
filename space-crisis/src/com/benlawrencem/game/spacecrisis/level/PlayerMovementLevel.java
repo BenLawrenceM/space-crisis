@@ -21,13 +21,13 @@ public class PlayerMovementLevel implements TileLevel {
 	public void init() {
 		PlayerEntity.loadResources();
 
-		tiles = new Tile[99][99];
+		tiles = new Tile[8][6];
 		for(int x = 0; x < tiles.length; x++)
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
 		entities = new ArrayList<Entity>();
-		player = new PlayerEntity(this, tiles[49][49]);
+		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
 		entities.add(player);
 		perspective = new EntityPerspective(this, player);
 	}
@@ -102,16 +102,24 @@ public class PlayerMovementLevel implements TileLevel {
 				x--;
 				break;
 		}
+		if(x < 0)
+			x = tiles.length - 1;
+		else if(x > tiles.length - 1)
+			x = 0;
+		if(y < 0)
+			y = tiles[0].length -1;
+		else if(y > tiles[0].length - 1)
+			y = 0;
 		return tiles[x][y];
 	}
 
 	@Override
 	public int getTileWidth() {
-		return 32;
+		return 18;
 	}
 
 	@Override
 	public int getTileHeight() {
-		return 24;
+		return 18;
 	}
 }

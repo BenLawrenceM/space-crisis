@@ -16,8 +16,12 @@ public abstract class Entity implements Renderable {
 	private Direction nextMoveDirection;
 	private Direction mostRecentMoveDirection;
 	private int timeSpentMoving;
+	private boolean isMoving;
+	private int timeSpentCancelingMove;
+	private boolean isCancelingMove;
 	private int timeNeededToCommitMove;
 	private int timeNeededToCompleteMove;
+	private int timeNeededToCancelMove;
 
 	public Entity(TileLevel level, Tile startingTile) {
 		this.level = level;
@@ -27,25 +31,37 @@ public abstract class Entity implements Renderable {
 		nextMoveDirection = Direction.NONE;
 		mostRecentMoveDirection = Direction.NONE;
 		timeSpentMoving = 0;
-		timeNeededToCommitMove = 150;
-		timeNeededToCompleteMove = 300;
+		isMoving = false;
+		timeSpentCancelingMove = 0;
+		isCancelingMove = false;
+		timeNeededToCommitMove = 200;
+		timeNeededToCompleteMove = 400;
+		timeNeededToCancelMove = 600;
 	}
 
 	public float getX() {
 		float x = currTile.getX();
-		if(moveDirection == Direction.EAST)
+		if(isMoving && moveDirection == Direction.EAST)
 			x += (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(moveDirection == Direction.WEST)
+		else if(isMoving && moveDirection == Direction.WEST)
 			x -= (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
+		else if(isCancelingMove && moveDirection == Direction.EAST)
+			x += (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
+		else if(isCancelingMove && moveDirection == Direction.WEST)
+			x -= (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
 		return x;
 	}
 
 	public float getY() {
 		float y = currTile.getY();
-		if(moveDirection == Direction.NORTH)
+		if(isMoving && moveDirection == Direction.NORTH)
 			y -= (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(moveDirection == Direction.SOUTH)
+		else if(isMoving && moveDirection == Direction.SOUTH)
 			y += (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
+		else if(isCancelingMove && moveDirection == Direction.NORTH)
+			y -= (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
+		else if(isCancelingMove && moveDirection == Direction.SOUTH)
+			y += (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
 		return y;
 	}
 
@@ -58,27 +74,54 @@ public abstract class Entity implements Renderable {
 	private int updatePositionBasedOnMovement(int delta) {
 		int remainder = delta;
 
-		if(isMoving()) {
-			//commit move
+		if(isMoving) {
 			if(timeSpentMoving < timeNeededToCommitMove && timeSpentMoving + delta >= timeNeededToCommitMove) {
-				currTile = nextTile;
-				nextTile = null;
+				if(isCancelingMove) {
+					//cancel move
+					isMoving = false;
+					timeSpentMoving = 0;
+					timeSpentCancelingMove = 0;
+				}
+				else {
+					//commit move
+					currTile = nextTile;
+					nextTile = null;
+				}
 			}
 
-			//increment movement
-			timeSpentMoving += delta;
+			if(isMoving) {
+				//increment movement
+				timeSpentMoving += delta;
+	
+				//complete move
+				if(timeSpentMoving >= timeNeededToCompleteMove) {
+					remainder = timeSpentMoving - timeNeededToCompleteMove;
+					mostRecentMoveDirection = moveDirection;
+					moveDirection = Direction.NONE;
+					isMoving = false;
+					timeSpentMoving = 0;
+					if(nextMoveDirection != Direction.NONE) {
+						Direction dir = nextMoveDirection;
+						nextMoveDirection = Direction.NONE;
+						move(dir);
+					}
+				}
+				else remainder = 0;
+			}
+		}
 
-			//complete move
-			if(timeSpentMoving >= timeNeededToCompleteMove) {
-				remainder = timeSpentMoving - timeNeededToCompleteMove;
+		else if(isCancelingMove) {
+			//increment cancelled movement
+			timeSpentCancelingMove += delta;
+
+			//complete cancelling move
+			if(timeSpentCancelingMove >= timeNeededToCancelMove) {
+				remainder = timeSpentCancelingMove - timeNeededToCancelMove;
+				isCancelingMove = false;
+				timeSpentCancelingMove = 0;
 				mostRecentMoveDirection = moveDirection;
 				moveDirection = Direction.NONE;
-				timeSpentMoving = 0;
-				if(nextMoveDirection != Direction.NONE) {
-					Direction dir = nextMoveDirection;
-					nextMoveDirection = Direction.NONE;
-					move(dir);
-				}
+				nextMoveDirection = Direction.NONE;
 			}
 			else remainder = 0;
 		}
@@ -111,13 +154,13 @@ public abstract class Entity implements Renderable {
 	}
 
 	protected void move(Direction dir) {
-		if(isMoving()) {
+		if(isMoving || isCancelingMove)
 			nextMoveDirection = dir;
-		}
 		else {
 			nextTile = level.getTile(currTile, dir);
 			mostRecentMoveDirection = (dir != Direction.NONE ? dir : moveDirection);
 			moveDirection = dir;
+			isMoving = true;
 			timeSpentMoving = 0;
 		}
 	}
@@ -131,7 +174,7 @@ public abstract class Entity implements Renderable {
 	}
 
 	public boolean isMoving() {
-		return moveDirection != Direction.NONE;
+		return isMoving;
 	}
 
 	protected boolean isMovingNorth() {
@@ -148,5 +191,14 @@ public abstract class Entity implements Renderable {
 
 	protected boolean isMovingWest() {
 		return moveDirection == Direction.WEST;
+	}
+
+	public void cancelMove() {
+		if(isMoving && !hasCommittedMove())
+			isCancelingMove = true;
+	}
+
+	public boolean isCancelingMove() {
+		return isCancelingMove && !isMoving;
 	}
 }
