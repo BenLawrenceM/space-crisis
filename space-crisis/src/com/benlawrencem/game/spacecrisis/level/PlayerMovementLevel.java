@@ -8,33 +8,33 @@ import org.newdawn.slick.Input;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
-import com.benlawrencem.game.spacecrisis.entity.Entity;
-import com.benlawrencem.game.spacecrisis.entity.PlayerEntity;
+import com.benlawrencem.game.spacecrisis.entity.OldEntity;
+import com.benlawrencem.game.spacecrisis.entity.OldPlayerEntity;
 
 public class PlayerMovementLevel implements TileLevel {
 	private Tile[][] tiles;
-	private List<Entity> entities;
+	private List<OldEntity> entities;
 	private Perspective perspective;
-	private PlayerEntity player;
+	private OldPlayerEntity player;
 
 	@Override
 	public void init() {
-		PlayerEntity.loadResources();
+		OldPlayerEntity.loadResources();
 
 		tiles = new Tile[8][6];
 		for(int x = 0; x < tiles.length; x++)
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
-		entities = new ArrayList<Entity>();
-		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
+		entities = new ArrayList<OldEntity>();
+		player = new OldPlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
 		entities.add(player);
 		perspective = new EntityPerspective(this, player);
 	}
 
 	@Override
 	public void update(int delta) {
-		for(Entity entity : entities)
+		for(OldEntity entity : entities)
 			entity.update(delta);
 	}
 
@@ -44,7 +44,7 @@ public class PlayerMovementLevel implements TileLevel {
 			for(int c = 0; c < tiles[r].length; c++)
 				perspective.render(g, tiles[r][c]);
 
-		for(Entity entity : entities)
+		for(OldEntity entity : entities)
 			perspective.render(g, entity);
 	}
 

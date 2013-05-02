@@ -8,12 +8,12 @@ import org.newdawn.slick.Graphics;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
-import com.benlawrencem.game.spacecrisis.entity.Entity;
+import com.benlawrencem.game.spacecrisis.entity.OldEntity;
 
 public class RandomWalkLevel implements TileLevel {
 	private int timer;
 	private Tile[][] tiles;
-	private List<Entity> entities;
+	private List<OldEntity> entities;
 	private Perspective perspective;
 
 	@Override
@@ -25,18 +25,18 @@ public class RandomWalkLevel implements TileLevel {
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
-		entities = new ArrayList<Entity>();
+		entities = new ArrayList<OldEntity>();
 		//for(int i = 0; i < 7; i++)
 			//entities.add(new RandomWalkEntity(this, tiles[49][49]));
 
-		Entity entity = new RandomWalkEntity(this, tiles[49][49]);
+		OldEntity entity = new RandomWalkEntity(this, tiles[49][49]);
 		entities.add(entity);
 		perspective = new EntityPerspective(this, entity);
 	}
 
 	@Override
 	public void update(int delta) {
-		for(Entity entity : entities)
+		for(OldEntity entity : entities)
 			entity.update(delta);
 		if(timer < 3000 && timer + delta >= 3000)
 			for(int i = 0; i < 9; i++)
@@ -59,7 +59,7 @@ public class RandomWalkLevel implements TileLevel {
 			for(int c = 0; c < tiles[r].length; c++)
 				perspective.render(g, tiles[r][c]);
 
-		for(Entity entity : entities)
+		for(OldEntity entity : entities)
 			perspective.render(g, entity);
 	}
 
@@ -100,7 +100,7 @@ public class RandomWalkLevel implements TileLevel {
 		return 24;
 	}
 
-	private static class RandomWalkEntity extends Entity {
+	private static class RandomWalkEntity extends OldEntity {
 		private int delayBeforeDecidingBehavior;
 
 		public RandomWalkEntity(TileLevel level, Tile startingTile) {

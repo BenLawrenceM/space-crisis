@@ -11,7 +11,7 @@ import com.benlawrencem.game.spacecrisis.display.Visibility;
 import com.benlawrencem.game.spacecrisis.level.Tile;
 import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
-public class PlayerEntity extends Entity {
+public class OldPlayerEntity extends OldEntity {
 	private static Animation[] STAND_ANIMATIONS;
 	private static Animation[] MOVE_ANIMATIONS;
 	private static Animation[] BUMP_ANIMATIONS;
@@ -20,22 +20,22 @@ public class PlayerEntity extends Entity {
 		try {
 			Image img = new Image("images/guysprite.gif", false, Image.FILTER_NEAREST);
 			SpriteSheet sprite = new SpriteSheet(img, 23, 32);
-			PlayerEntity.STAND_ANIMATIONS = new Animation[4];
+			OldPlayerEntity.STAND_ANIMATIONS = new Animation[4];
 			for(int i = 0; i < 4; i++) {
-				PlayerEntity.STAND_ANIMATIONS[i] = new Animation(sprite, new int[] { 0,i }, new int[] { 1000 });
-				PlayerEntity.STAND_ANIMATIONS[i].setAutoUpdate(false);
+				OldPlayerEntity.STAND_ANIMATIONS[i] = new Animation(sprite, new int[] { 0,i }, new int[] { 1000 });
+				OldPlayerEntity.STAND_ANIMATIONS[i].setAutoUpdate(false);
 			}
-			PlayerEntity.MOVE_ANIMATIONS = new Animation[4];
+			OldPlayerEntity.MOVE_ANIMATIONS = new Animation[4];
 			int[] walkDurations = new int[] { 200, 200, 200, 200 };
 			for(int i = 0; i < 4; i++) {
-				PlayerEntity.MOVE_ANIMATIONS[i] = new Animation(sprite, new int[] { 3,i, 4,i, 3,i, 5,i }, walkDurations);
-				PlayerEntity.MOVE_ANIMATIONS[i].setAutoUpdate(false);
+				OldPlayerEntity.MOVE_ANIMATIONS[i] = new Animation(sprite, new int[] { 3,i, 4,i, 3,i, 5,i }, walkDurations);
+				OldPlayerEntity.MOVE_ANIMATIONS[i].setAutoUpdate(false);
 			}
-			PlayerEntity.BUMP_ANIMATIONS = new Animation[4];
+			OldPlayerEntity.BUMP_ANIMATIONS = new Animation[4];
 			int[] bumpDurations = new int[] { 150, 150 };
 			for(int i = 0; i < 4; i++) {
-				PlayerEntity.BUMP_ANIMATIONS[i] = new Animation(sprite, new int[] { 16,i, 17,i }, bumpDurations);
-				PlayerEntity.BUMP_ANIMATIONS[i].setAutoUpdate(false);
+				OldPlayerEntity.BUMP_ANIMATIONS[i] = new Animation(sprite, new int[] { 16,i, 17,i }, bumpDurations);
+				OldPlayerEntity.BUMP_ANIMATIONS[i].setAutoUpdate(false);
 			}
 		} catch (SlickException e) {
 			
@@ -57,18 +57,18 @@ public class PlayerEntity extends Entity {
 	private Animation[] bumpAnim;
 	private Direction[] moveDirectionPreferences;
 
-	public PlayerEntity(TileLevel level, Tile startingTile) {
+	public OldPlayerEntity(TileLevel level, Tile startingTile) {
 		super(level, startingTile);
 		moveDirectionPreferences = new Direction[4];
-		standAnim = new Animation[PlayerEntity.STAND_ANIMATIONS.length];
-		for(int i = 0; i < PlayerEntity.STAND_ANIMATIONS.length; i++)
-			standAnim[i] = PlayerEntity.STAND_ANIMATIONS[i].copy();
-		moveAnim = new Animation[PlayerEntity.MOVE_ANIMATIONS.length];
-		for(int i = 0; i < PlayerEntity.MOVE_ANIMATIONS.length; i++)
-			moveAnim[i] = PlayerEntity.MOVE_ANIMATIONS[i].copy();
-		bumpAnim = new Animation[PlayerEntity.BUMP_ANIMATIONS.length];
-		for(int i = 0; i < PlayerEntity.BUMP_ANIMATIONS.length; i++)
-			bumpAnim[i] = PlayerEntity.BUMP_ANIMATIONS[i].copy();
+		standAnim = new Animation[OldPlayerEntity.STAND_ANIMATIONS.length];
+		for(int i = 0; i < OldPlayerEntity.STAND_ANIMATIONS.length; i++)
+			standAnim[i] = OldPlayerEntity.STAND_ANIMATIONS[i].copy();
+		moveAnim = new Animation[OldPlayerEntity.MOVE_ANIMATIONS.length];
+		for(int i = 0; i < OldPlayerEntity.MOVE_ANIMATIONS.length; i++)
+			moveAnim[i] = OldPlayerEntity.MOVE_ANIMATIONS[i].copy();
+		bumpAnim = new Animation[OldPlayerEntity.BUMP_ANIMATIONS.length];
+		for(int i = 0; i < OldPlayerEntity.BUMP_ANIMATIONS.length; i++)
+			bumpAnim[i] = OldPlayerEntity.BUMP_ANIMATIONS[i].copy();
 	}
 
 	public void startMovingNorth() {

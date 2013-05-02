@@ -3,202 +3,205 @@ package com.benlawrencem.game.spacecrisis.entity;
 import org.newdawn.slick.Graphics;
 
 import com.benlawrencem.game.spacecrisis.Direction;
-import com.benlawrencem.game.spacecrisis.display.Renderable;
 import com.benlawrencem.game.spacecrisis.display.Visibility;
 import com.benlawrencem.game.spacecrisis.level.Tile;
 import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
-public abstract class Entity implements Renderable {
+public abstract class Entity {
+	private enum Action { MOVE, MOVE_COMMITTED, MOVE_CANCELED, MOVE_CANCELED_RECOVERING, NONE };
+
 	private TileLevel level;
-	private Tile currTile;
-	private Tile nextTile;
+	private Tile tile;
+	private Direction facingDirection;
 	private Direction moveDirection;
-	private Direction nextMoveDirection;
-	private Direction mostRecentMoveDirection;
-	private int timeSpentMoving;
-	private boolean isMoving;
-	private int timeSpentCancelingMove;
-	private boolean isCancelingMove;
+	private Direction queuedMoveDirection;
+	private Tile moveToTile;
+	private float moveSpeedTilesPerSecond;
+	private Action currAction;
+	private Action queuedAction;
+	private boolean willCancelMove;
+	private int timeSpentCompletingCurrentAction;
+	private int timeNeededToCompleteCurrentAction;
 	private int timeNeededToCommitMove;
 	private int timeNeededToCompleteMove;
 	private int timeNeededToCancelMove;
+	private int timeNeededToRecoverFromCanceledMove;
 
 	public Entity(TileLevel level, Tile startingTile) {
 		this.level = level;
-		currTile = startingTile;
-		nextTile = null;
+		tile = startingTile;
+		facingDirection = Direction.SOUTH;
 		moveDirection = Direction.NONE;
-		nextMoveDirection = Direction.NONE;
-		mostRecentMoveDirection = Direction.NONE;
-		timeSpentMoving = 0;
-		isMoving = false;
-		timeSpentCancelingMove = 0;
-		isCancelingMove = false;
-		timeNeededToCommitMove = 200;
-		timeNeededToCompleteMove = 400;
-		timeNeededToCancelMove = 600;
+		moveToTile = null;
+		setMoveSpeed(1);
+		currAction = Action.NONE;
+		queuedAction = Action.NONE;
+		timeSpentCompletingCurrentAction = 0;
+		timeNeededToCompleteCurrentAction = 0;
+		timeNeededToRecoverFromCanceledMove = 200;
 	}
 
 	public float getX() {
-		float x = currTile.getX();
-		if(isMoving && moveDirection == Direction.EAST)
-			x += (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(isMoving && moveDirection == Direction.WEST)
-			x -= (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(isCancelingMove && moveDirection == Direction.EAST)
-			x += (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
-		else if(isCancelingMove && moveDirection == Direction.WEST)
-			x -= (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
+		float x = tile.getX();
+		if(currAction == Action.MOVE || currAction == Action.MOVE_CANCELED || currAction == Action.MOVE_COMMITTED) {
+			if(moveDirection == Direction.EAST)
+				x += (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+			else if(moveDirection == Direction.WEST)
+				x -= (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+		}
 		return x;
 	}
 
 	public float getY() {
-		float y = currTile.getY();
-		if(isMoving && moveDirection == Direction.NORTH)
-			y -= (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(isMoving && moveDirection == Direction.SOUTH)
-			y += (1.0 * timeSpentMoving / timeNeededToCompleteMove) - (hasCommittedMove() ? 1 : 0);
-		else if(isCancelingMove && moveDirection == Direction.NORTH)
-			y -= (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
-		else if(isCancelingMove && moveDirection == Direction.SOUTH)
-			y += (0.5 - 0.5 * timeSpentCancelingMove / timeNeededToCancelMove);
+		float y = tile.getY();
+		if(currAction == Action.MOVE || currAction == Action.MOVE_CANCELED || currAction == Action.MOVE_COMMITTED) {
+			if(moveDirection == Direction.SOUTH)
+				y += (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+			else if(moveDirection == Direction.NORTH)
+				y -= (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+		}
 		return y;
 	}
 
 	public void update(int delta) {
-		int remainder = updatePositionBasedOnMovement(delta);
-		decideBehavior(delta);
-		updatePositionBasedOnMovement(remainder);
+		while(performAction(delta) != 0);
 	}
 
-	private int updatePositionBasedOnMovement(int delta) {
-		int remainder = delta;
-
-		if(isMoving) {
-			if(timeSpentMoving < timeNeededToCommitMove && timeSpentMoving + delta >= timeNeededToCommitMove) {
-				if(isCancelingMove) {
-					//cancel move
-					isMoving = false;
-					timeSpentMoving = 0;
-					timeSpentCancelingMove = 0;
+	private int performAction(int delta) {
+		if(currAction == Action.NONE) {
+			//use queued action if it's available and there's no other action to perform
+			if(queuedAction != Action.NONE) {
+				setCurrentAction(queuedAction);
+				if(currAction == Action.MOVE) {
+					moveDirection = queuedMoveDirection;
+					if(moveDirection != Direction.NONE)
+						moveToTile = level.getTile(tile, moveDirection);
+					queuedMoveDirection = Direction.NONE;
 				}
-				else {
-					//commit move
-					currTile = nextTile;
-					nextTile = null;
-				}
+				queuedAction = Action.NONE;
 			}
 
-			if(isMoving) {
-				//increment movement
-				timeSpentMoving += delta;
-	
-				//complete move
-				if(timeSpentMoving >= timeNeededToCompleteMove) {
-					remainder = timeSpentMoving - timeNeededToCompleteMove;
-					mostRecentMoveDirection = moveDirection;
-					moveDirection = Direction.NONE;
-					isMoving = false;
-					timeSpentMoving = 0;
-					if(nextMoveDirection != Direction.NONE) {
-						Direction dir = nextMoveDirection;
-						nextMoveDirection = Direction.NONE;
-						move(dir);
+			//otherwise there's nothing to do
+			else return 0;
+		}
+
+		timeSpentCompletingCurrentAction += delta;
+		if(timeSpentCompletingCurrentAction >= timeNeededToCompleteCurrentAction) {
+			int remainder = timeSpentCompletingCurrentAction - timeNeededToCompleteCurrentAction;
+			switch(currAction) {
+				case MOVE:
+					if(willCancelMove)
+						setCurrentAction(Action.MOVE_CANCELED);
+					else {
+						setCurrentAction(Action.MOVE_COMMITTED);
+						tile = moveToTile;
 					}
-				}
-				else remainder = 0;
+					moveToTile = null;
+					break;
+				case MOVE_COMMITTED:
+					setCurrentAction(Action.NONE);
+					moveDirection = Direction.NONE;
+					break;
+				case MOVE_CANCELED:
+					setCurrentAction(Action.MOVE_CANCELED_RECOVERING);
+					break;
+				case MOVE_CANCELED_RECOVERING:
+					setCurrentAction(Action.NONE);
+					moveDirection = Direction.NONE;
+					break;
+				default:
+					return 0;
 			}
+			return remainder;
 		}
-
-		else if(isCancelingMove) {
-			//increment cancelled movement
-			timeSpentCancelingMove += delta;
-
-			//complete cancelling move
-			if(timeSpentCancelingMove >= timeNeededToCancelMove) {
-				remainder = timeSpentCancelingMove - timeNeededToCancelMove;
-				isCancelingMove = false;
-				timeSpentCancelingMove = 0;
-				mostRecentMoveDirection = moveDirection;
-				moveDirection = Direction.NONE;
-				nextMoveDirection = Direction.NONE;
-			}
-			else remainder = 0;
-		}
-
-		return remainder;
+		return 0;
 	}
-
-	protected abstract void decideBehavior(int delta);
-
-	private boolean hasCommittedMove() {
-		return timeSpentMoving >= timeNeededToCommitMove;
-	}
-
+	
 	public abstract void render(Graphics g, Visibility visibility, float x, float y, float scale);
 
-	public void moveNorth() {
-		move(Direction.NORTH);
-	}
-
-	public void moveSouth() {
-		move(Direction.SOUTH);
-	}
-
-	public void moveEast() {
-		move(Direction.EAST);
-	}
-
-	public void moveWest() {
-		move(Direction.WEST);
-	}
-
-	protected void move(Direction dir) {
-		if(isMoving || isCancelingMove)
-			nextMoveDirection = dir;
-		else {
-			nextTile = level.getTile(currTile, dir);
-			mostRecentMoveDirection = (dir != Direction.NONE ? dir : moveDirection);
+	public void move(Direction dir) {
+		if(!isPerformingAction()) {
+			setCurrentAction(Action.MOVE);
 			moveDirection = dir;
-			isMoving = true;
-			timeSpentMoving = 0;
+			moveToTile = level.getTile(tile, dir);
+		}
+		else {
+			queuedAction = Action.MOVE;
+			queuedMoveDirection = dir;
 		}
 	}
 
-	public Direction getMoveDirection() {
-		return moveDirection;
+	private void setCurrentAction(Action action) {
+		currAction = action;
+		timeSpentCompletingCurrentAction = 0;
+		switch(action) {
+			case MOVE:
+				timeNeededToCompleteCurrentAction = timeNeededToCommitMove;
+				break;
+			case MOVE_COMMITTED:
+				timeNeededToCompleteCurrentAction = timeNeededToCompleteMove;
+				break;
+			case MOVE_CANCELED:
+				timeNeededToCompleteCurrentAction = timeNeededToCancelMove;
+				break;
+			case MOVE_CANCELED_RECOVERING:
+				timeNeededToCompleteCurrentAction = timeNeededToRecoverFromCanceledMove;
+				break;
+			default:
+				timeNeededToCompleteCurrentAction = 0;
+				break;
+		}
 	}
 
-	public Direction getMostRecentMoveDirection() {
-		return mostRecentMoveDirection;
+	public Tile getTile() {
+		return tile;
 	}
 
-	public boolean isMoving() {
-		return isMoving;
+	public void setTile(Tile tile) {
+		this.tile = tile;
 	}
 
-	protected boolean isMovingNorth() {
-		return moveDirection == Direction.NORTH;
-	}
-
-	protected boolean isMovingSouth() {
-		return moveDirection == Direction.SOUTH;
-	}
-
-	protected boolean isMovingEast() {
-		return moveDirection == Direction.EAST;
-	}
-
-	protected boolean isMovingWest() {
-		return moveDirection == Direction.WEST;
+	public boolean canCancelMove() {
+		return currAction == Action.MOVE;
 	}
 
 	public void cancelMove() {
-		if(isMoving && !hasCommittedMove())
-			isCancelingMove = true;
+		if(canCancelMove())
+			willCancelMove = true;
+	}
+
+	public boolean isMoving() {
+		return currAction == Action.MOVE || currAction == Action.MOVE_COMMITTED;
 	}
 
 	public boolean isCancelingMove() {
-		return isCancelingMove && !isMoving;
+		return currAction == Action.MOVE_CANCELED;
+	}
+
+	public boolean isRecoveringFromCanceledMove() {
+		return currAction == Action.MOVE_CANCELED_RECOVERING;
+	}
+
+	public boolean isPerformingAction() {
+		return currAction != Action.NONE;
+	}
+
+	public Direction getFacing() {
+		return (isMoving() || isCancelingMove() || isRecoveringFromCanceledMove() ? moveDirection : facingDirection);
+	}
+
+	public void setFacing(Direction facing) {
+		facingDirection = facing;
+	}
+
+	public float getMoveSpeed() {
+		return moveSpeedTilesPerSecond;
+	}
+
+	public void setMoveSpeed(float tilesPerSecond) {
+		moveSpeedTilesPerSecond = tilesPerSecond;
+		timeNeededToCompleteMove = (int) (1 / tilesPerSecond);
+		timeNeededToCommitMove = timeNeededToCompleteMove / 2;
+		timeNeededToCancelMove = timeNeededToCompleteMove;
 	}
 }
