@@ -15,6 +15,7 @@ public abstract class Entity {
 	private Direction facingDirection;
 	private Direction moveDirection;
 	private Direction queuedMoveDirection;
+	private Direction[] queuedMoveDirectionPreferences;
 	private Tile moveToTile;
 	private float moveSpeedTilesPerSecond;
 	private Action currAction;
@@ -36,6 +37,9 @@ public abstract class Entity {
 		setMoveSpeed(1);
 		currAction = Action.NONE;
 		queuedAction = Action.NONE;
+		queuedMoveDirectionPreferences = new Direction[4];
+		for(int i = 0; i < queuedMoveDirectionPreferences.length; i++)
+			queuedMoveDirectionPreferences[i] = null;
 		timeSpentCompletingCurrentAction = 0;
 		timeNeededToCompleteCurrentAction = 0;
 		timeNeededToRecoverFromCanceledMove = 200;
@@ -79,6 +83,12 @@ public abstract class Entity {
 					queuedMoveDirection = Direction.NONE;
 				}
 				queuedAction = Action.NONE;
+			}
+
+			//if startMoving was called, that takes precedence after any queued actions
+			else if(queuedMoveDirectionPreferences[0] != null) {
+				setCurrentAction(Action.MOVE);
+				moveDirection = queuedMoveDirectionPreferences[0];
 			}
 
 			//otherwise there's nothing to do
@@ -129,6 +139,29 @@ public abstract class Entity {
 			queuedAction = Action.MOVE;
 			queuedMoveDirection = dir;
 		}
+	}
+
+	public void startMoving(Direction dir) {
+		move(dir);
+		int last = queuedMoveDirectionPreferences.length - 1;
+		int dirIndex = last;
+		for(int i = 0; i < last && dirIndex == last; i++)
+			if(queuedMoveDirectionPreferences[i] == dir)
+				dirIndex = i;
+		for(int i = dirIndex; i >= 1; i--)
+			queuedMoveDirectionPreferences[i] = queuedMoveDirectionPreferences[i - 1];
+		queuedMoveDirectionPreferences[0] = dir;
+	}
+
+	public void stopMoving(Direction dir) {
+		boolean foundDir = false;
+		for(int i = 0; i < queuedMoveDirectionPreferences.length - 1; i++) {
+			if(!foundDir && queuedMoveDirectionPreferences[i] == dir)
+				foundDir = true;
+			if(foundDir)
+				queuedMoveDirectionPreferences[i] = queuedMoveDirectionPreferences[i + 1];
+		}
+		queuedMoveDirectionPreferences[queuedMoveDirectionPreferences.length - 1] = null;
 	}
 
 	private void setCurrentAction(Action action) {
