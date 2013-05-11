@@ -8,33 +8,42 @@ import org.newdawn.slick.Input;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
-import com.benlawrencem.game.spacecrisis.entity.OldEntity;
-import com.benlawrencem.game.spacecrisis.entity.OldPlayerEntity;
+import com.benlawrencem.game.spacecrisis.entity.Entity;
+import com.benlawrencem.game.spacecrisis.entity.PlayerEntity;
 
 public class PlayerMovementLevel implements TileLevel {
 	private Tile[][] tiles;
-	private List<OldEntity> entities;
+	private List<Entity> entities;
 	private Perspective perspective;
-	private OldPlayerEntity player;
+	private PlayerEntity player;
+	private int timeToNextBump;
 
 	@Override
 	public void init() {
-		OldPlayerEntity.loadResources();
+		PlayerEntity.loadResources();
 
 		tiles = new Tile[8][6];
 		for(int x = 0; x < tiles.length; x++)
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
-		entities = new ArrayList<OldEntity>();
-		player = new OldPlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
+		entities = new ArrayList<Entity>();
+		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
 		entities.add(player);
 		perspective = new EntityPerspective(this, player);
+
+		timeToNextBump = 0;
 	}
 
 	@Override
 	public void update(int delta) {
-		for(OldEntity entity : entities)
+		if(timeToNextBump <= 0) {
+			timeToNextBump = 1600 + (int) (500 * Math.random());
+			player.cancelMove();
+		}
+		timeToNextBump -= delta;
+
+		for(Entity entity : entities)
 			entity.update(delta);
 	}
 
@@ -44,7 +53,7 @@ public class PlayerMovementLevel implements TileLevel {
 			for(int c = 0; c < tiles[r].length; c++)
 				perspective.render(g, tiles[r][c]);
 
-		for(OldEntity entity : entities)
+		for(Entity entity : entities)
 			perspective.render(g, entity);
 	}
 
@@ -52,16 +61,16 @@ public class PlayerMovementLevel implements TileLevel {
 	public void keyPressed(int key, char c) {
 		switch(key) {
 			case Input.KEY_UP:
-				player.startMovingNorth();
+				player.startMoving(Direction.NORTH);
 				break;
 			case Input.KEY_DOWN:
-				player.startMovingSouth();
+				player.startMoving(Direction.SOUTH);
 				break;
 			case Input.KEY_LEFT:
-				player.startMovingWest();
+				player.startMoving(Direction.WEST);
 				break;
 			case Input.KEY_RIGHT:
-				player.startMovingEast();
+				player.startMoving(Direction.EAST);
 				break;
 		}
 	}
@@ -70,16 +79,16 @@ public class PlayerMovementLevel implements TileLevel {
 	public void keyReleased(int key, char c) {
 		switch(key) {
 		case Input.KEY_UP:
-			player.stopMovingNorth();
+			player.stopMoving(Direction.NORTH);
 			break;
 		case Input.KEY_DOWN:
-			player.stopMovingSouth();
+			player.stopMoving(Direction.SOUTH);
 			break;
 		case Input.KEY_LEFT:
-			player.stopMovingWest();
+			player.stopMoving(Direction.WEST);
 			break;
 		case Input.KEY_RIGHT:
-			player.stopMovingEast();
+			player.stopMoving(Direction.EAST);
 			break;
 		}
 	}

@@ -20,7 +20,7 @@ public class SpaceCrisisGame extends StateBasedGame {
 	}
 
 	public SpaceCrisisGame() {
-		super("Dungeon Garden");
+		super("Space Crisis");
 		addState(new LoadingState(SpaceCrisisGame.LOADING_STATE));
 		addState(new GameplayState(SpaceCrisisGame.GAMEPLAY_STATE));
 	}

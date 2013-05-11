@@ -8,12 +8,12 @@ import org.newdawn.slick.Graphics;
 
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
-import com.benlawrencem.game.spacecrisis.entity.OldEntity;
+import com.benlawrencem.game.spacecrisis.entity.Entity;
 
 public class RandomWalkLevel implements TileLevel {
 	private int timer;
 	private Tile[][] tiles;
-	private List<OldEntity> entities;
+	private List<Entity> entities;
 	private Perspective perspective;
 
 	@Override
@@ -25,18 +25,18 @@ public class RandomWalkLevel implements TileLevel {
 			for(int y = 0; y < tiles[x].length; y++)
 				tiles[x][y] = new Tile(this, x, y);
 
-		entities = new ArrayList<OldEntity>();
+		entities = new ArrayList<Entity>();
 		//for(int i = 0; i < 7; i++)
 			//entities.add(new RandomWalkEntity(this, tiles[49][49]));
 
-		OldEntity entity = new RandomWalkEntity(this, tiles[49][49]);
+		Entity entity = new RandomWalkEntity(this, tiles[49][49]);
 		entities.add(entity);
 		perspective = new EntityPerspective(this, entity);
 	}
 
 	@Override
 	public void update(int delta) {
-		for(OldEntity entity : entities)
+		for(Entity entity : entities)
 			entity.update(delta);
 		if(timer < 3000 && timer + delta >= 3000)
 			for(int i = 0; i < 9; i++)
@@ -59,7 +59,7 @@ public class RandomWalkLevel implements TileLevel {
 			for(int c = 0; c < tiles[r].length; c++)
 				perspective.render(g, tiles[r][c]);
 
-		for(OldEntity entity : entities)
+		for(Entity entity : entities)
 			perspective.render(g, entity);
 	}
 
@@ -100,25 +100,37 @@ public class RandomWalkLevel implements TileLevel {
 		return 24;
 	}
 
-	private static class RandomWalkEntity extends OldEntity {
+	private static class RandomWalkEntity extends Entity {
 		private int delayBeforeDecidingBehavior;
 
 		public RandomWalkEntity(TileLevel level, Tile startingTile) {
 			super(level, startingTile);
 			delayBeforeDecidingBehavior = 0;
+			setMoveSpeed(5);
 		}
 
 		@Override
 		public void render(Graphics g, Visibility visibility, float x, float y, float scale) {
 			if(visibility == Visibility.VISIBLE) {
-				if(isMovingNorth())
-					g.setColor(Color.red);
-				else if(isMovingSouth())
-					g.setColor(Color.green);
-				else if(isMovingEast())
-					g.setColor(Color.cyan);
-				else if(isMovingWest())
-					g.setColor(Color.yellow);
+				if(isMoving()) {
+					switch(getFacing()) {
+					case NORTH:
+						g.setColor(Color.red);
+						break;
+					case SOUTH:
+						g.setColor(Color.green);
+						break;
+					case EAST:
+						g.setColor(Color.cyan);
+						break;
+					case WEST:
+						g.setColor(Color.yellow);
+						break;
+					default:
+						g.setColor(Color.white);
+						break;
+					}
+				}
 				else
 					g.setColor(Color.white);
 				g.fillRect(x - (16 * scale), y - (12 * scale), 32 * scale, 24 * scale);
@@ -126,19 +138,20 @@ public class RandomWalkLevel implements TileLevel {
 		}
 
 		@Override
-		protected void decideBehavior(int delta) {
+		public void update(int delta) {
+			super.update(delta);
 			if(!isMoving()) {
 				delayBeforeDecidingBehavior -= delta;
 				if(delayBeforeDecidingBehavior < 0) {
 					double r = Math.random();
 					if(r < 0.25)
-						moveNorth();
+						move(Direction.NORTH);
 					else if(r < 0.50)
-						moveSouth();
+						move(Direction.SOUTH);
 					else if(r < 0.75)
-						moveEast();
+						move(Direction.EAST);
 					else
-						moveWest();
+						move(Direction.WEST);
 					delayBeforeDecidingBehavior = (int) (50 + 250 * Math.random());
 				}
 			}

@@ -3,7 +3,7 @@ package com.benlawrencem.game.spacecrisis.display;
 import org.newdawn.slick.Graphics;
 
 import com.benlawrencem.game.spacecrisis.SpaceCrisisGame;
-import com.benlawrencem.game.spacecrisis.entity.OldEntity;
+import com.benlawrencem.game.spacecrisis.entity.Entity;
 import com.benlawrencem.game.spacecrisis.level.Tile;
 import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
@@ -12,17 +12,17 @@ public class EntityPerspective implements Perspective {
 	private final float MAX_OBJECT_HEIGHT = 100;
 
 	private TileLevel level;
-	private OldEntity entity;
+	private Entity entity;
 	private float scale;
 
-	public EntityPerspective(TileLevel level, OldEntity entity) {
+	public EntityPerspective(TileLevel level, Entity entity) {
 		this.level = level;
 		this.entity = entity;
 		scale = 3;
 	}
 
 	@Override
-	public void render(Graphics g, OldEntity entity) {
+	public void render(Graphics g, Entity entity) {
 		float x = SpaceCrisisGame.GAME_WIDTH / 2 + (entity.getX() - this.entity.getX()) * level.getTileWidth() * scale;
 		float y = SpaceCrisisGame.GAME_HEIGHT / 2 + (entity.getY() - this.entity.getY()) * level.getTileHeight() * scale;
 		Visibility visibility = Visibility.VISIBLE;

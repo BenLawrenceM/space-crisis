@@ -70,6 +70,16 @@ public class PlayerEntity extends Entity {
 	}
 
 	@Override
+	public void update(int delta) {
+		super.update(delta);
+		for(int i = 0; i < 4; i++) {
+			standAnim[i].update(delta);
+			moveAnim[i].update(delta);
+			bumpAnim[i].update(delta);
+		}
+	}
+
+	@Override
 	public void render(Graphics g, Visibility visibility, float x, float y, float scale) {
 		if(visibility == Visibility.VISIBLE) {
 			Animation anim;

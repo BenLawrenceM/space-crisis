@@ -2,7 +2,7 @@ package com.benlawrencem.game.spacecrisis.display;
 
 import org.newdawn.slick.Graphics;
 
-import com.benlawrencem.game.spacecrisis.entity.OldEntity;
+import com.benlawrencem.game.spacecrisis.entity.Entity;
 import com.benlawrencem.game.spacecrisis.level.Tile;
 import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
@@ -16,7 +16,7 @@ public class SimplePerspective implements Perspective {
 	}
 
 	@Override
-	public void render(Graphics g, OldEntity entity) {
+	public void render(Graphics g, Entity entity) {
 		float x = entity.getX() * level.getTileWidth() * scale;
 		float y = entity.getY() * level.getTileHeight() * scale;
 		entity.render(g, Visibility.VISIBLE, x, y, scale);

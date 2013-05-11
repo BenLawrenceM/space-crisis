@@ -34,7 +34,7 @@ public abstract class Entity {
 		facingDirection = Direction.SOUTH;
 		moveDirection = Direction.NONE;
 		moveToTile = null;
-		setMoveSpeed(1);
+		setMoveSpeed(2);
 		currAction = Action.NONE;
 		queuedAction = Action.NONE;
 		queuedMoveDirectionPreferences = new Direction[4];
@@ -48,10 +48,25 @@ public abstract class Entity {
 	public float getX() {
 		float x = tile.getX();
 		if(currAction == Action.MOVE || currAction == Action.MOVE_CANCELED || currAction == Action.MOVE_COMMITTED) {
-			if(moveDirection == Direction.EAST)
-				x += (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
-			else if(moveDirection == Direction.WEST)
-				x -= (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+			float percentComplete = (1.0f * timeSpentCompletingCurrentAction) / (1.0f * timeNeededToCompleteCurrentAction);
+			if(currAction == Action.MOVE) {
+				if(moveDirection == Direction.EAST)
+					x += 0.5 * percentComplete;
+				else if(moveDirection == Direction.WEST)
+					x -= 0.5 * percentComplete;
+			}
+			else if(currAction == Action.MOVE_COMMITTED) {
+				if(moveDirection == Direction.EAST)
+					x -= 0.5 * (1 - percentComplete);
+				else if(moveDirection == Direction.WEST)
+					x += 0.5 * (1 - percentComplete);
+			}
+			else if(currAction == Action.MOVE_CANCELED) {
+				if(moveDirection == Direction.EAST)
+					x += 0.5 * (1 - percentComplete);
+				else if(moveDirection == Direction.WEST)
+					x -= 0.5 * (1 - percentComplete);
+			}
 		}
 		return x;
 	}
@@ -59,49 +74,65 @@ public abstract class Entity {
 	public float getY() {
 		float y = tile.getY();
 		if(currAction == Action.MOVE || currAction == Action.MOVE_CANCELED || currAction == Action.MOVE_COMMITTED) {
-			if(moveDirection == Direction.SOUTH)
-				y += (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
-			else if(moveDirection == Direction.NORTH)
-				y -= (currAction == Action.MOVE_COMMITTED ? -0.5 : 0.5) * (timeSpentCompletingCurrentAction / timeNeededToCompleteCurrentAction);
+			float percentComplete = (1.0f * timeSpentCompletingCurrentAction) / (1.0f * timeNeededToCompleteCurrentAction);
+			if(currAction == Action.MOVE) {
+				if(moveDirection == Direction.SOUTH)
+					y += 0.5 * percentComplete;
+				else if(moveDirection == Direction.NORTH)
+					y -= 0.5 * percentComplete;
+			}
+			else if(currAction == Action.MOVE_COMMITTED) {
+				if(moveDirection == Direction.SOUTH)
+					y -= 0.5 * (1 - percentComplete);
+				else if(moveDirection == Direction.NORTH)
+					y += 0.5 * (1 - percentComplete);
+			}
+			else if(currAction == Action.MOVE_CANCELED) {
+				if(moveDirection == Direction.SOUTH)
+					y += 0.5 * (1 - percentComplete);
+				else if(moveDirection == Direction.NORTH)
+					y -= 0.5 * (1 - percentComplete);
+			}
 		}
 		return y;
 	}
 
 	public void update(int delta) {
-		while(performAction(delta) != 0);
+		while(performAction(delta) != -1);
 	}
 
 	private int performAction(int delta) {
 		if(currAction == Action.NONE) {
 			//use queued action if it's available and there's no other action to perform
 			if(queuedAction != Action.NONE) {
-				setCurrentAction(queuedAction);
-				if(currAction == Action.MOVE) {
-					moveDirection = queuedMoveDirection;
-					if(moveDirection != Direction.NONE)
-						moveToTile = level.getTile(tile, moveDirection);
-					queuedMoveDirection = Direction.NONE;
-				}
+				if(queuedAction == Action.MOVE)
+					move(queuedMoveDirection);
+				else
+					setCurrentAction(queuedAction);
 				queuedAction = Action.NONE;
+				queuedMoveDirection = Direction.NONE;
 			}
 
 			//if startMoving was called, that takes precedence after any queued actions
 			else if(queuedMoveDirectionPreferences[0] != null) {
-				setCurrentAction(Action.MOVE);
-				moveDirection = queuedMoveDirectionPreferences[0];
+				move(queuedMoveDirectionPreferences[0]);
 			}
 
 			//otherwise there's nothing to do
-			else return 0;
+			else return -1;
 		}
+		else if(delta == 0)
+			return -1;
 
 		timeSpentCompletingCurrentAction += delta;
 		if(timeSpentCompletingCurrentAction >= timeNeededToCompleteCurrentAction) {
 			int remainder = timeSpentCompletingCurrentAction - timeNeededToCompleteCurrentAction;
 			switch(currAction) {
 				case MOVE:
-					if(willCancelMove)
+					if(willCancelMove) {
 						setCurrentAction(Action.MOVE_CANCELED);
+						willCancelMove = false;
+					}
 					else {
 						setCurrentAction(Action.MOVE_COMMITTED);
 						tile = moveToTile;
@@ -120,11 +151,11 @@ public abstract class Entity {
 					moveDirection = Direction.NONE;
 					break;
 				default:
-					return 0;
+					return -1;
 			}
 			return remainder;
 		}
-		return 0;
+		return -1;
 	}
 	
 	public abstract void render(Graphics g, Visibility visibility, float x, float y, float scale);
@@ -132,6 +163,7 @@ public abstract class Entity {
 	public void move(Direction dir) {
 		if(!isPerformingAction()) {
 			setCurrentAction(Action.MOVE);
+			facingDirection = dir;
 			moveDirection = dir;
 			moveToTile = level.getTile(tile, dir);
 		}
@@ -233,8 +265,8 @@ public abstract class Entity {
 
 	public void setMoveSpeed(float tilesPerSecond) {
 		moveSpeedTilesPerSecond = tilesPerSecond;
-		timeNeededToCompleteMove = (int) (1 / tilesPerSecond);
-		timeNeededToCommitMove = timeNeededToCompleteMove / 2;
-		timeNeededToCancelMove = timeNeededToCompleteMove;
+		timeNeededToCompleteMove = (int) (500 / tilesPerSecond);
+		timeNeededToCommitMove = timeNeededToCompleteMove;
+		timeNeededToCancelMove = 2 * timeNeededToCommitMove;
 	}
 }
