@@ -85,7 +85,7 @@ public class PlayerEntity extends Entity {
 			Animation anim;
 			if(isMoving())
 				anim = moveAnim[toIndex(getFacing())];
-			else if(isCancelingMove())
+			else if(isCancelingMove() || isRecoveringFromCanceledMove())
 				anim = bumpAnim[toIndex(getFacing())];
 			else {
 				anim = standAnim[toIndex(getFacing())];

@@ -43,6 +43,7 @@ public abstract class Entity {
 		timeSpentCompletingCurrentAction = 0;
 		timeNeededToCompleteCurrentAction = 0;
 		timeNeededToRecoverFromCanceledMove = 200;
+		tile.onEntered(this);
 	}
 
 	public float getX() {
@@ -132,10 +133,19 @@ public abstract class Entity {
 					if(willCancelMove) {
 						setCurrentAction(Action.MOVE_CANCELED);
 						willCancelMove = false;
+						tile.onNoLongerLeaving(this);
+						onNoLongerLeaving(tile);
+						moveToTile.onNoLongerEntering(this);
+						onNoLongerEntering(moveToTile);
 					}
 					else {
 						setCurrentAction(Action.MOVE_COMMITTED);
+						Tile old = tile;
 						tile = moveToTile;
+						old.onLeft(this);
+						onLeave(old);
+						tile.onEntered(this);
+						onEnter(tile);
 					}
 					moveToTile = null;
 					break;
@@ -166,6 +176,10 @@ public abstract class Entity {
 			facingDirection = dir;
 			moveDirection = dir;
 			moveToTile = level.getTile(tile, dir);
+			tile.onLeaving(this);
+			onLeaving(tile);
+			moveToTile.onEntering(this);
+			onEntering(moveToTile);
 		}
 		else {
 			queuedAction = Action.MOVE;
@@ -268,5 +282,29 @@ public abstract class Entity {
 		timeNeededToCompleteMove = (int) (500 / tilesPerSecond);
 		timeNeededToCommitMove = timeNeededToCompleteMove;
 		timeNeededToCancelMove = 2 * timeNeededToCommitMove;
+	}
+
+	public void onEnter(Tile tile) {
+		
+	}
+
+	public void onEntering(Tile tile) {
+		
+	}
+
+	public void onNoLongerEntering(Tile tile) {
+		
+	}
+
+	public void onLeave(Tile tile) {
+		
+	}
+
+	public void onLeaving(Tile tile) {
+		
+	}
+
+	public void onNoLongerLeaving(Tile tile) {
+		
 	}
 }
