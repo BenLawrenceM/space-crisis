@@ -17,7 +17,7 @@ public class RandomWalkLevel implements TileLevel {
 	private Perspective perspective;
 
 	@Override
-	public void init() {
+	public void init(boolean isServer) {
 		timer = 0;
 
 		tiles = new Tile[99][99];

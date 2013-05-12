@@ -15,6 +15,7 @@ public class Tile implements Renderable {
 	private int x;
 	private int y;
 	private List<Entity> entities;
+	private List<Entity> occupying;
 	private List<Entity> leaving;
 	private List<Entity> entering;
 
@@ -23,6 +24,7 @@ public class Tile implements Renderable {
 		this.x = x;
 		this.y = y;
 		entities = new ArrayList<Entity>();
+		occupying = new ArrayList<Entity>();
 		leaving = new ArrayList<Entity>();
 		entering = new ArrayList<Entity>();
 	}
@@ -43,6 +45,10 @@ public class Tile implements Renderable {
 		this.y = y;
 	}
 
+	public boolean canEnter(Entity entity) {
+		return entering.size() == 0 && occupying.size() == 0 && leaving.size() == 0;
+	}
+
 	public void onEntering(Entity entity) {
 		entering.add(entity);
 	}
@@ -53,44 +59,50 @@ public class Tile implements Renderable {
 
 	public void onEntered(Entity entity) {
 		entering.remove(entity);
+		occupying.add(entity);
 		entities.add(entity);
 	}
 
 	public void onLeaving(Entity entity) {
-		entities.remove(entity);
+		occupying.remove(entity);
 		leaving.add(entity);
 	}
 
 	public void onNoLongerLeaving(Entity entity) {
 		leaving.remove(entity);
-		entities.add(entity);
+		occupying.add(entity);
 	}
 
 	public void onLeft(Entity entity) {
 		leaving.remove(entity);
+		entities.remove(entity);
+	}
+
+	public List<Entity> getEntities() {
+		return entities;
 	}
 
 	@Override
 	public void render(Graphics g, Visibility visibility, float x, float y, float scale) {
 		if(visibility == Visibility.VISIBLE) {
-			boolean hasSomeEntities = entities.size() > 0;
+			boolean hasSomeEntities = occupying.size() > 0;
 			boolean hasSomeEntering = entering.size() > 0;
 			boolean hasSomeLeaving = leaving.size() > 0;
 			if(hasSomeEntities) {
 				if(hasSomeEntering && hasSomeLeaving)
 					g.setColor(new Color(255, 150, 255));
 				else if(hasSomeEntering)
-					g.setColor(new Color(255, 100, 100));
-				else if(hasSomeLeaving)
 					g.setColor(new Color(100, 255, 255));
+				else if(hasSomeLeaving)
+					g.setColor(new Color(255, 100, 100));
 				else
 					g.setColor(new Color(255, 255, 255));
 			}
 			else if(hasSomeEntering) {
-				g.setColor(new Color(0, 125, 125));
+				g.setColor(new Color(0, 85, 85));
 			}
 			else if(hasSomeLeaving) {
-				g.setColor(new Color(125, 0, 0));
+				g.setColor(new Color(85, 0, 0));
 			}
 			else {
 				g.setColor(new Color(0, 0, 0));

@@ -9,6 +9,7 @@ import org.newdawn.slick.Input;
 import com.benlawrencem.game.spacecrisis.Direction;
 import com.benlawrencem.game.spacecrisis.display.*;
 import com.benlawrencem.game.spacecrisis.entity.Entity;
+import com.benlawrencem.game.spacecrisis.entity.PillarEntity;
 import com.benlawrencem.game.spacecrisis.entity.PlayerEntity;
 
 public class PlayerMovementLevel implements TileLevel {
@@ -16,11 +17,11 @@ public class PlayerMovementLevel implements TileLevel {
 	private List<Entity> entities;
 	private Perspective perspective;
 	private PlayerEntity player;
-	private int timeToNextBump;
 
 	@Override
-	public void init() {
+	public void init(boolean isServer) {
 		PlayerEntity.loadResources();
+		PillarEntity.loadResources();
 
 		tiles = new Tile[8][6];
 		for(int x = 0; x < tiles.length; x++)
@@ -30,31 +31,28 @@ public class PlayerMovementLevel implements TileLevel {
 		entities = new ArrayList<Entity>();
 		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
 		entities.add(player);
+		entities.add(new PillarEntity(this, tiles[1][1]));
+		entities.add(new PillarEntity(this, tiles[2][1]));
+		entities.add(new PillarEntity(this, tiles[3][1]));
 		perspective = new EntityPerspective(this, player);
-
-		timeToNextBump = 0;
 	}
 
 	@Override
 	public void update(int delta) {
-		if(timeToNextBump <= 0) {
-			timeToNextBump = 1600 + (int) (500 * Math.random());
-			player.cancelMove();
-		}
-		timeToNextBump -= delta;
-
 		for(Entity entity : entities)
 			entity.update(delta);
 	}
 
 	@Override
 	public void render(Graphics g) {
-		for(int r = 0; r < tiles.length; r++)
-			for(int c = 0; c < tiles[r].length; c++)
-				perspective.render(g, tiles[r][c]);
+		for(int y = 0; y < tiles[0].length; y++)
+			for(int x = 0; x < tiles.length; x++)
+				perspective.render(g, tiles[x][y]);
 
-		for(Entity entity : entities)
-			perspective.render(g, entity);
+		for(int y = 0; y < tiles[0].length; y++)
+			for(int x = 0; x < tiles.length; x++)
+				for(Entity entity : tiles[x][y].getEntities())
+					perspective.render(g, entity);
 	}
 
 	@Override

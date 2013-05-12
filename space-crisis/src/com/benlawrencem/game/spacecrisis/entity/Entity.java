@@ -9,7 +9,9 @@ import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
 public abstract class Entity {
 	private enum Action { MOVE, MOVE_COMMITTED, MOVE_CANCELED, MOVE_CANCELED_RECOVERING, NONE };
+	private static int NEXT_ID = 0;
 
+	private int id;
 	private TileLevel level;
 	private Tile tile;
 	private Direction facingDirection;
@@ -29,6 +31,13 @@ public abstract class Entity {
 	private int timeNeededToRecoverFromCanceledMove;
 
 	public Entity(TileLevel level, Tile startingTile) {
+		this(Entity.NEXT_ID, level, startingTile);
+	}
+
+	public Entity(int id, TileLevel level, Tile startingTile) {
+		this.id = id;
+		if(id >= Entity.NEXT_ID)
+			Entity.NEXT_ID = id + 1;
 		this.level = level;
 		tile = startingTile;
 		facingDirection = Direction.SOUTH;
@@ -44,6 +53,10 @@ public abstract class Entity {
 		timeNeededToCompleteCurrentAction = 0;
 		timeNeededToRecoverFromCanceledMove = 200;
 		tile.onEntered(this);
+	}
+
+	public int getId() {
+		return id;
 	}
 
 	public float getX() {
@@ -172,14 +185,18 @@ public abstract class Entity {
 
 	public void move(Direction dir) {
 		if(!isPerformingAction()) {
-			setCurrentAction(Action.MOVE);
-			facingDirection = dir;
-			moveDirection = dir;
-			moveToTile = level.getTile(tile, dir);
-			tile.onLeaving(this);
-			onLeaving(tile);
-			moveToTile.onEntering(this);
-			onEntering(moveToTile);
+			Tile targetTile = level.getTile(tile, dir);
+			if(targetTile.canEnter(this)) {
+				setCurrentAction(Action.MOVE);
+				facingDirection = dir;
+				moveDirection = dir;
+				moveToTile = targetTile;
+				tile.onLeaving(this);
+				onLeaving(tile);
+				moveToTile.onEntering(this);
+				onEntering(moveToTile);
+			}
+			else facingDirection = dir;
 		}
 		else {
 			queuedAction = Action.MOVE;

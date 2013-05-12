@@ -23,7 +23,7 @@ public class GameplayState extends BasicGameState {
 	public void init(GameContainer container, StateBasedGame game, Level level) throws SlickException {
 		init(container, game);
 		this.level = level;
-		level.init();
+		level.init(false);
 	}
 
 	@Override

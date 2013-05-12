@@ -7,7 +7,7 @@ public class BasicLevel implements Level {
 	private int lastKeyPressed;
 
 	@Override
-	public void init() {
+	public void init(boolean isServer) {
 		lastKeyPressed = -1;
 	}
 
