@@ -20,8 +20,10 @@ public class PlayerMovementLevel implements TileLevel {
 
 	@Override
 	public void init(boolean isServer) {
-		PlayerEntity.loadResources();
-		PillarEntity.loadResources();
+		if(!isServer) {
+			PlayerEntity.loadResources();
+			PillarEntity.loadResources();
+		}
 
 		tiles = new Tile[8][6];
 		for(int x = 0; x < tiles.length; x++)
@@ -29,11 +31,11 @@ public class PlayerMovementLevel implements TileLevel {
 				tiles[x][y] = new Tile(this, x, y);
 
 		entities = new ArrayList<Entity>();
-		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
-		entities.add(player);
 		entities.add(new PillarEntity(this, tiles[1][1]));
 		entities.add(new PillarEntity(this, tiles[2][1]));
 		entities.add(new PillarEntity(this, tiles[3][1]));
+		player = new PlayerEntity(this, tiles[tiles.length/2][tiles[0].length/2]);
+		entities.add(player);
 		perspective = new EntityPerspective(this, player);
 	}
 

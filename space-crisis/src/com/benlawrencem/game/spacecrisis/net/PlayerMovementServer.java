@@ -7,6 +7,14 @@ import com.benlawrencem.net.nightingale.Server.CouldNotStartServerException;
 import com.benlawrencem.net.nightingale.ServerListener;
 
 public class PlayerMovementServer implements ServerListener {
+	private static PlayerMovementServer instance = null;
+
+	public static PlayerMovementServer getInstance() {
+		if(instance == null)
+			instance = new PlayerMovementServer();
+		return instance;
+	}
+
 	private Server server;
 
 	public PlayerMovementServer() {

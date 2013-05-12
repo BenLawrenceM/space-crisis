@@ -12,9 +12,9 @@ import com.benlawrencem.game.spacecrisis.level.Tile;
 import com.benlawrencem.game.spacecrisis.level.TileLevel;
 
 public class PlayerEntity extends Entity {
-	private static Animation[] STAND_ANIMATIONS;
-	private static Animation[] MOVE_ANIMATIONS;
-	private static Animation[] BUMP_ANIMATIONS;
+	private static Animation[] STAND_ANIMATIONS = null;
+	private static Animation[] MOVE_ANIMATIONS = null;
+	private static Animation[] BUMP_ANIMATIONS = null;
 
 	public static void loadResources() {
 		try {
@@ -58,6 +58,14 @@ public class PlayerEntity extends Entity {
 
 	public PlayerEntity(TileLevel level, Tile startingTile) {
 		super(level, startingTile);
+		standAnim = null;
+		moveAnim = null;
+		bumpAnim = null;
+		if(PlayerEntity.STAND_ANIMATIONS != null && PlayerEntity.MOVE_ANIMATIONS != null && PlayerEntity.BUMP_ANIMATIONS != null)
+			copyAnimations();
+	}
+
+	private void copyAnimations() {
 		standAnim = new Animation[PlayerEntity.STAND_ANIMATIONS.length];
 		for(int i = 0; i < PlayerEntity.STAND_ANIMATIONS.length; i++)
 			standAnim[i] = PlayerEntity.STAND_ANIMATIONS[i].copy();
@@ -72,10 +80,12 @@ public class PlayerEntity extends Entity {
 	@Override
 	public void update(int delta) {
 		super.update(delta);
-		for(int i = 0; i < 4; i++) {
-			standAnim[i].update(delta);
-			moveAnim[i].update(delta);
-			bumpAnim[i].update(delta);
+		if(standAnim != null && moveAnim != null && bumpAnim != null) {
+			for(int i = 0; i < 4; i++) {
+				standAnim[i].update(delta);
+				moveAnim[i].update(delta);
+				bumpAnim[i].update(delta);
+			}
 		}
 	}
 
